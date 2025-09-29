@@ -1,4 +1,4 @@
-# 🖼️ AI Image Classifier
+# 📸 AI Image Classifier
 
 An AI-powered image classifier built with Streamlit and MobileNetV2  
 The app will identify the top objects in a picture if you upload one or more photos or take a picture with your webcam.
