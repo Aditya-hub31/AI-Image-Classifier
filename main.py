@@ -12,6 +12,7 @@ def load_model():
     model = MobileNetV2(weights= "imagenet")
     return model
 
+@st.cache_data 
 def preprocess_image(image):   # converting image to what MobileNetV2 expects
     if image.mode != "RGB":
         image = image.convert("RGB")
@@ -45,26 +46,46 @@ def main():
 
     model = load_cached_model()
 
-    uploaded_file = st.file_uploader("Choose an image", type=["jpg", "png"] )
-    if uploaded_file is not None:
-        image = Image.open(uploaded_file).convert("RGB")
-        st.image(image, caption="Uploaded Image", use_container_width=True)
+    uploaded_files = st.file_uploader(
+    "Choose one or more images",
+    type=["jpg", "png"],
+    accept_multiple_files=True
+    )
 
+    if uploaded_files:
+        for uploaded_file in uploaded_files:
+            image = Image.open(uploaded_file).convert("RGB")
+            st.image(image, caption=f"Uploaded Image: {uploaded_file.name}", use_container_width=True)
+            
+            if st.button(f"Classify {uploaded_file.name}"):
+                with st.spinner("Analyzing Image..."):
+                    predictions = classify_image(model, image)
 
-        btn = st.button("Classify Image")
+                    if predictions:
+                        st.success(f"Top Predictions for {uploaded_file.name}:")
+                        for i, (_, label, score) in enumerate(predictions):
+                            st.markdown(f"**{i+1}. {label}** — `{score:.2%}`")
 
-        if btn:
-            with st.spinner("Analyzing Image"):
-                image = Image.open(uploaded_file)
+        if st.button("Clear All"):
+            st.experimental_rerun()
+
+    st.markdown("---")  # separator line
+    st.subheader("Or capture an image using your camera")
+
+    camera_image = st.camera_input("Take a picture")
+
+    if camera_image is not None:
+        image = Image.open(camera_image).convert("RGB")
+        st.image(image, caption="Captured Image", use_container_width=True)
+
+        if st.button("Classify Camera Image"):
+            with st.spinner("Analyzing Camera Image..."):
                 predictions = classify_image(model, image)
 
                 if predictions:
-                    st.success("Top Predictions:")
+                    st.success("Top Predictions for Captured Image:")
                     for i, (_, label, score) in enumerate(predictions):
-                        st.markdown(f"**{i+1}. {label}** — `{score:.2%}`")
-
-        if st.button("Clear"):
-            st.experimental_rerun()
+                        st.markdown(f"**{i+1}. {label}** — `{score:.2%}`")        
 
 if __name__ == "__main__":
     main()
